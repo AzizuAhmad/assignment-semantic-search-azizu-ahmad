@@ -90,7 +90,6 @@ Semantic_Search_Assignment/
 │   └── faq_metadata.csv                     # mapping urutan vektor -> FAQ
 ├── documentation/
 │   └── retrieval_test_results.md
-├── .env.example
 ├── README.md
 └── requirements.txt
 ```
@@ -102,11 +101,16 @@ Semantic_Search_Assignment/
    ```bash
    pip install -r requirements.txt
    ```
-3. Bikin API key di [Google AI Studio](https://aistudio.google.com/apikey), lalu copy `.env.example` jadi `.env` dan isi key-nya:
-   ```
-   GEMINI_API_KEY=api_key_kamu
-   ```
-   (atau set langsung sebagai environment variable `GEMINI_API_KEY`)
+3. Bikin API key di [Google AI Studio](https://aistudio.google.com/apikey), terus simpan sebagai environment variable `GEMINI_API_KEY` (notebook ngambil key dari situ, ga ditulis di kode).
+   - Windows (Command Prompt), habis itu tutup & buka lagi CMD/Jupyter-nya:
+     ```
+     setx GEMINI_API_KEY "MASUKKAN_API_KEY_DI_SINI"
+     ```
+   - macOS:
+     ```
+     echo 'export GEMINI_API_KEY="MASUKKAN_API_KEY_DI_SINI"' >> ~/.zshrc
+     source ~/.zshrc
+     ```
 4. Buka notebook dari folder `notebook/` (path data di notebook pakai `../data/...`):
    ```bash
    cd notebook
