@@ -84,43 +84,11 @@ Pengujian dilakukan dengan 6 query. Hasil lengkapnya bisa dilihat di notebook ba
 - Kalimat jawaban LLM bisa sedikit berbeda setiap kali dijalankan karena temperature 0.3, tetapi isinya tetap mengikuti FAQ.
 - Jumlah FAQ hanya 59 sehingga `IndexFlatL2` masih cukup. Jika datanya sudah ribuan, sebaiknya menggunakan jenis index yang lebih efisien.
 
-## Struktur Project
-
-```
-Semantic_Search_Assignment/
-├── data/
-│   └── ecommerce_faq_knowledge_base.csv
-├── notebook/
-│   └── starter_notebook_semantic_search.ipynb
-├── vector_store/
-│   ├── faq_index.faiss
-│   └── faq_metadata.csv
-├── documentation/
-│   └── retrieval_test_results.md
-├── README.md
-└── requirements.txt
-```
-
 ## Cara Menjalankan
 
-1. Clone repository ini lalu masuk ke folder project.
-2. Install library yang dibutuhkan:
+1. Install library yang dibutuhkan:
    ```bash
    pip install -r requirements.txt
    ```
-3. Buat API key di [Google AI Studio](https://aistudio.google.com/apikey), lalu simpan sebagai environment variable `GEMINI_API_KEY`. Notebook akan mengambil API key dari environment variable tersebut.
-   - Windows (Command Prompt), setelah itu tutup dan buka kembali Command Prompt atau Jupyter:
-     ```
-     setx GEMINI_API_KEY "MASUKKAN_API_KEY_DI_SINI"
-     ```
-   - macOS:
-     ```
-     echo 'export GEMINI_API_KEY="MASUKKAN_API_KEY_DI_SINI"' >> ~/.zshrc
-     source ~/.zshrc
-     ```
-4. Buka notebook dari dalam folder `notebook/`, karena path data di notebook menggunakan `../data/...`:
-   ```bash
-   cd notebook
-   jupyter notebook starter_notebook_semantic_search.ipynb
-   ```
-5. Jalankan semua cell dengan Run All. Notebook akan membuat embedding, menyimpan index ke `vector_store/`, lalu menjalankan semua query pengujian. Karena ada jeda untuk batas request, bagian 8 membutuhkan waktu sekitar 1-2 menit.
+2. Simpan API key Gemini sebagai environment variable `GEMINI_API_KEY`.
+3. Buka `notebook/starter_notebook_semantic_search.ipynb`, lalu jalankan semua cell.
