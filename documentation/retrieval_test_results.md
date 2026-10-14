@@ -1,9 +1,9 @@
-# Hasil Uji Retrieval & Jawaban LLM
+# Hasil Uji Retrieval dan Jawaban LLM
 
-Setup: `gemini-embedding-001` (3072 dimensi) + FAISS `IndexFlatL2` (vektor dinormalisasi), top_k = 3, LLM `gemini-2.5-flash` temperature 0.3.
-Similarity = cosine similarity (`1 - distance/2`), makin tinggi makin mirip.
+Pengujian menggunakan `gemini-embedding-001` dengan dimensi 3072, FAISS `IndexFlatL2` dengan vektor yang sudah dinormalisasi, top_k = 3, dan LLM `gemini-2.5-flash` dengan temperature 0.3.
+Nilai similarity yang ditampilkan adalah cosine similarity (`1 - distance/2`). Semakin tinggi nilainya, semakin mirip FAQ tersebut dengan query.
 
-Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM bisa sedikit beda kalau di-run ulang.
+Hasil di bawah diambil dari notebook bagian 8. Kalimat jawaban LLM bisa sedikit berbeda jika notebook dijalankan ulang.
 
 ---
 
@@ -18,7 +18,7 @@ Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM b
 **Jawaban LLM:**
 > Halo! Untuk membatalkan pesanan, kamu bisa melakukannya lewat halaman 'Pesanan Saya'. Pembatalan hanya bisa dilakukan selama status pesananmu masih 'Diproses' ya. Kalau statusnya sudah 'Dikirim', pesanan tidak bisa dibatalkan.
 
-**Catatan:** rank 1 tepat. Rank 2 kurang nyambung (pengembalian barang, bukan pembatalan), mungkin karena "membatalkan" dan "mengembalikan" dianggap mirip maknanya. LLM cuma pakai rank 1, jawaban sesuai FAQ.
+**Catatan:** FAQ di rank 1 sudah tepat. FAQ di rank 2 kurang relevan karena membahas pengembalian barang, bukan pembatalan pesanan. Kemungkinan kata "membatalkan" dan "mengembalikan" dianggap memiliki makna yang mirip. LLM hanya memakai FAQ rank 1 sehingga jawabannya tetap sesuai.
 
 ---
 
@@ -33,7 +33,7 @@ Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM b
 **Jawaban LLM:**
 > Halo Kak! Untuk proses refund setelah barang dikembalikan, dananya biasanya akan diproses dalam 3-7 hari kerja setelah barang diterima dan diverifikasi oleh penjual. Semoga informasinya membantu ya!
 
-**Catatan:** skor tertinggi dari semua tes. Ketiga hasil satu kategori dan masih nyambung. Angka 3-7 hari kerja sesuai FAQ.
+**Catatan:** Query ini mendapatkan skor tertinggi dari semua pengujian. Ketiga hasil berasal dari kategori yang sama dan masih berhubungan dengan pertanyaan. Angka 3-7 hari kerja pada jawaban sesuai dengan FAQ.
 
 ---
 
@@ -50,7 +50,7 @@ Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM b
 >
 > Kakak bisa coba tunggu dulu sekitar 15-30 menit ya. Kalau setelah itu status pesanan masih belum berubah, mohon hubungi customer service kami untuk bantuan lebih lanjut.
 
-**Catatan:** ini tes parafrase paling "berat" karena hampir semua katanya beda (duit/pembayaran, kepotong/dipotong, orderan/pesanan, belum lunas/belum terbayar) plus bahasa gaul. Tetap ketemu di rank 1.
+**Catatan:** Ini adalah pengujian parafrase yang paling sulit karena hampir semua katanya berbeda dari FAQ, misalnya "duit" dengan "pembayaran", "orderan" dengan "pesanan", dan "belum lunas" dengan "belum terbayar". Selain itu query ditulis dengan bahasa tidak baku. FAQ yang tepat tetap ditemukan di rank 1.
 
 ---
 
@@ -70,7 +70,7 @@ Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM b
 >
 > Semoga membantu ya!
 
-**Catatan:** "ga inget kata sandi buat masuk" berhasil dicocokin ke "lupa password akun". Rank 2 juga masih relevan (masalah login).
+**Catatan:** Kalimat "ga inget kata sandi buat masuk" berhasil dicocokkan dengan FAQ "lupa password akun". FAQ di rank 2 juga masih relevan karena membahas masalah login.
 
 ---
 
@@ -92,7 +92,7 @@ Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM b
 >
 > Pengajuan ini bisa dilakukan maksimal 3 hari setelah barang diterima ya.
 
-**Catatan:** LLM ngegabungin rank 1 (komplain + foto) dan rank 2 (maksimal 3 hari), jadi jawabannya lebih lengkap dari satu FAQ aja.
+**Catatan:** LLM menggabungkan informasi dari FAQ rank 1 tentang cara mengajukan komplain dan FAQ rank 2 tentang batas waktu 3 hari. Hasilnya jawaban menjadi lebih lengkap dibanding hanya memakai satu FAQ.
 
 ---
 
@@ -107,7 +107,7 @@ Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM b
 **Jawaban LLM:**
 > Halo! Untuk saat ini, aku belum punya informasi apakah bisa kirim barang ke luar negeri seperti Jepang. Mungkin kamu bisa langsung menghubungi customer service kami ya, biar bisa dibantu lebih lanjut.
 
-**Catatan:** retrieval tetap ngasih 3 FAQ (kategori Pengiriman, jadi topiknya kena) tapi ga ada yang bahas pengiriman internasional. Skornya paling rendah dan hampir sama rata, beda sama query lain yang rank 1 nya jauh di atas rank 2. LLM ga ngarang dan ngaku ga punya infonya.
+**Catatan:** Retrieval tetap mengembalikan 3 FAQ dari kategori Pengiriman, tetapi tidak ada yang membahas pengiriman ke luar negeri. Skornya paling rendah dan ketiga hasil memiliki nilai yang hampir sama, berbeda dengan query lain yang skor rank 1 nya cukup jauh di atas rank 2. LLM tidak mengarang jawaban dan menyampaikan bahwa informasinya belum tersedia.
 
 ---
 
@@ -117,8 +117,8 @@ Output di bawah diambil dari hasil run notebook section 8. Kalimat jawaban LLM b
 |---|---|---|---|
 | Ada di FAQ | 2 | 2/2 | 2/2 |
 | Parafrase | 3 | 3/3 | 3/3 |
-| Tidak ada di FAQ | 1 | - | 1/1 (menolak dengan benar) |
+| Tidak ada di FAQ | 1 | - | 1/1 |
 
-- Skor top-1 query yang relevan: 0.769 - 0.814. Query yang ga ada jawabannya: 0.693.
-- Selisih skor rank 1 vs rank 2 di query relevan sekitar 0.05-0.08, sedangkan di query 6 cuma 0.0001. Ini bisa jadi sinyal tambahan buat deteksi "ga ada jawaban".
-- Ide pengembangan: pasang threshold similarity (sekitar 0.72) sebelum context dikirim ke LLM, biar ga cuma ngandelin prompt.
+- Skor rank 1 untuk query yang jawabannya ada di FAQ berada di antara 0.769 sampai 0.814, sedangkan query yang tidak ada jawabannya hanya 0.693.
+- Selisih skor rank 1 dan rank 2 pada query yang relevan sekitar 0.05 sampai 0.08, sedangkan pada query 6 hanya 0.0001. Selisih ini bisa dipakai sebagai tanda tambahan bahwa pertanyaan tidak ada di FAQ.
+- Untuk pengembangan berikutnya, bisa ditambahkan batas minimum similarity sekitar 0.72 sebelum context dikirim ke LLM, sehingga sistem tidak hanya bergantung pada instruksi prompt.

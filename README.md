@@ -1,28 +1,32 @@
 # Semantic Search & LLM Application - FAQ E-commerce
 
-Individual assignment AI Engineering Bootcamp. Isinya prototype asisten CS e-commerce yang bisa nyari FAQ paling relevan pakai semantic search (Gemini Embeddings + FAISS), terus jawabannya disusun ulang sama LLM (Gemini) berdasarkan FAQ yang ketemu.
+Repository ini berisi tugas individu AI Engineering Bootcamp. Pada tugas ini dibuat prototype asisten customer service e-commerce yang mencari FAQ paling relevan menggunakan semantic search (Gemini Embeddings dan FAISS). Setelah itu jawaban disusun oleh LLM (Gemini) berdasarkan FAQ yang ditemukan.
 
 ## Problem Statement
 
-**Objective**
-Tim customer service e-commerce kebanjiran pertanyaan yang itu-itu aja tiap hari (soal pesanan, pengiriman, pembayaran, refund, dll). Tujuannya bikin prototype asisten AI yang bisa:
-1. nemuin FAQ yang paling nyambung sama pertanyaan pelanggan, walaupun pelanggan nanya pakai kata-kata yang beda dari FAQ (misal pakai bahasa santai atau sinonim), dan
-2. ngasih jawaban yang natural pakai LLM, tapi tetap berdasarkan isi FAQ.
+### Objective
 
-Prototype ini nantinya jadi dasar sebelum dikembangin jadi RAG system yang lebih lengkap.
+Tim customer service e-commerce setiap hari menerima banyak pertanyaan yang berulang, misalnya tentang pesanan, pengiriman, pembayaran, dan pengembalian barang. Karena itu pada assignment ini dibuat prototype asisten AI yang bisa:
 
-**Knowledge base**
-- Sumber: `data/ecommerce_faq_knowledge_base.csv` (dari mentor, tidak diubah sama sekali).
-- Isi: 59 FAQ, 4 kolom: `faq_id`, `category`, `question`, `answer`.
-- 8 kategori: Pemesanan (9), Pengiriman (9), Pembayaran (8), Pengembalian (8), Akun (7), Produk (7), Promo (6), Customer Service (5).
-- Data bersih, ga ada missing value atau pertanyaan dobel. Jawabannya pendek (rata-rata ~17 kata), jadi 1 FAQ langsung dijadiin 1 unit retrievable tanpa chunking.
+1. Menemukan FAQ yang paling sesuai dengan pertanyaan pelanggan, meskipun pelanggan bertanya dengan kata-kata yang berbeda dari FAQ.
+2. Memberikan jawaban yang natural menggunakan LLM, tetapi isinya tetap mengikuti FAQ.
 
-**Batasan & asumsi**
-- Sistem cuma boleh jawab berdasarkan FAQ yang ada. Kalau infonya ga ada, harus bilang ga tahu dan arahin ke customer service, bukan ngarang.
-- Bahasa yang dipakai bahasa Indonesia (sesuai FAQ).
-- Knowledge base dianggap statis, kalau ada FAQ baru ya embedding & index-nya harus dibuat ulang.
-- Ga ada riwayat percakapan (tiap pertanyaan berdiri sendiri).
-- Pakai Gemini API free tier, jadi ada limit request per menit (makanya di notebook ada retry & jeda).
+Prototype ini nantinya akan menjadi dasar untuk membangun RAG system yang lebih lengkap.
+
+### Knowledge Base
+
+- Sumber data: `data/ecommerce_faq_knowledge_base.csv`
+- Jumlah data: 59 FAQ dengan 4 kolom, yaitu `faq_id`, `category`, `question`, dan `answer`.
+- Terdapat 8 kategori: Pemesanan (9), Pengiriman (9), Pembayaran (8), Pengembalian (8), Akun (7), Produk (7), Promo (6), dan Customer Service (5).
+- Tidak ada missing value maupun pertanyaan yang duplikat. Jawaban pada FAQ juga cukup pendek, rata-rata sekitar 17 kata, sehingga setiap FAQ langsung dijadikan satu unit retrievable tanpa perlu chunking.
+
+### Batasan dan Asumsi
+
+- Sistem hanya menjawab berdasarkan FAQ yang tersedia. Jika informasinya tidak ada, sistem harus menyampaikan bahwa informasi belum tersedia dan menyarankan pelanggan menghubungi customer service.
+- Bahasa yang digunakan adalah bahasa Indonesia, sama seperti FAQ.
+- Knowledge base dianggap tetap. Jika ada FAQ baru, embedding dan index perlu dibuat ulang.
+- Setiap pertanyaan diproses secara terpisah dan tidak ada riwayat percakapan.
+- API yang digunakan adalah Gemini API versi gratis yang punya batas jumlah request per menit, sehingga di notebook ditambahkan retry dan jeda waktu.
 
 ## Alur Sistem
 
@@ -30,64 +34,67 @@ Prototype ini nantinya jadi dasar sebelum dikembangin jadi RAG system yang lebih
 ingest  ->  embed  ->  store  ->  retrieve  ->  generate
 ```
 
-| Tahap | Yang dilakuin |
+| Tahap | Proses |
 |---|---|
-| Ingest | Load CSV pakai Pandas, cek struktur data, gabungin `category + question + answer` jadi satu teks per FAQ |
-| Embed | Tiap teks diubah jadi vektor pakai `gemini-embedding-001` (task type `RETRIEVAL_DOCUMENT`), hasilnya shape `(59, 3072)` |
-| Store | Vektor dinormalisasi lalu dimasukin ke FAISS `IndexFlatL2` (59 vektor), index disimpan ke `vector_store/faq_index.faiss` |
-| Retrieve | Query di-embed (task type `RETRIEVAL_QUERY`), dicari top-3 terdekat di FAISS. Ditampilin distance L2 dan similarity (cosine, karena vektornya udah dinormalisasi: `similarity = 1 - distance/2`) |
-| Generate | Hasil retrieval dimasukin ke prompt (Persona, Task, Context, Format), dikirim ke `gemini-2.5-flash` dengan temperature 0.3 |
+| Ingest | Data CSV dimuat menggunakan Pandas, lalu dicek strukturnya. Kolom category, question, dan answer digabung menjadi satu teks untuk setiap FAQ. |
+| Embed | Setiap teks diubah menjadi vektor menggunakan `gemini-embedding-001` dengan task type `RETRIEVAL_DOCUMENT`. Hasilnya berukuran `(59, 3072)`. |
+| Store | Vektor dinormalisasi lalu disimpan ke FAISS `IndexFlatL2`. Total ada 59 vektor dan index-nya disimpan di `vector_store/faq_index.faiss`. |
+| Retrieve | Query pelanggan diubah menjadi embedding dengan task type `RETRIEVAL_QUERY`, lalu dicari 3 FAQ terdekat di FAISS. Hasilnya ditampilkan bersama distance L2 dan similarity. Karena vektor sudah dinormalisasi, similarity dihitung dengan `1 - distance/2`. |
+| Generate | Hasil retrieval dimasukkan ke dalam prompt, lalu dikirim ke `gemini-2.5-flash` dengan temperature 0.3. |
 
-Catatan: di starter notebook modelnya `text-embedding-004` dan `gemini-2.0-flash`, tapi dua model itu udah ga ada di daftar model API key aku, jadi aku ganti ke `gemini-embedding-001` dan `gemini-2.5-flash`.
+Di starter notebook model yang digunakan adalah `text-embedding-004` dan `gemini-2.0-flash`. Kedua model tersebut sudah tidak tersedia di API key yang saya gunakan, jadi diganti dengan `gemini-embedding-001` dan `gemini-2.5-flash`.
 
-**Prompt design**
-Prompt dibagi jadi beberapa bagian:
-- **Persona**: asisten CS e-commerce yang ramah dan sopan.
-- **Task**: jawab cuma dari CONTEXT, jangan ngarang angka/biaya/durasi, abaikan FAQ yang ga nyambung, dan kalau ga ada infonya bilang terus terang + sarankan hubungi CS.
-- **Context**: top-3 FAQ hasil semantic search (lengkap sama kategori & skor similarity).
-- **Format**: 2-4 kalimat, boleh pakai poin kalau ada langkah-langkah.
+### Prompt Design
+
+Prompt dibagi menjadi empat bagian:
+
+- Persona: asisten customer service e-commerce yang ramah dan sopan.
+- Task: menjawab hanya dari context, tidak mengarang angka, biaya, atau durasi, mengabaikan FAQ yang tidak berhubungan, dan jika informasinya tidak ada maka harus disampaikan dengan jujur serta menyarankan menghubungi customer service.
+- Context: 3 FAQ teratas dari hasil semantic search beserta kategori dan nilai similarity-nya.
+- Format: jawaban 2-4 kalimat, dan boleh memakai poin jika berisi langkah-langkah.
 
 ## Hasil Pengujian
 
-Diuji pakai 6 query. Detail lengkapnya (top-3 + jawaban LLM) ada di notebook section 8 dan di [`documentation/retrieval_test_results.md`](documentation/retrieval_test_results.md).
+Pengujian dilakukan dengan 6 query. Hasil lengkapnya bisa dilihat di notebook bagian 8 dan di [`documentation/retrieval_test_results.md`](documentation/retrieval_test_results.md).
 
-| # | Jenis | Query | Top-1 FAQ | Similarity | Hasil |
+| No | Jenis | Query | FAQ Rank 1 | Similarity | Hasil |
 |---|---|---|---|---|---|
 | 1 | Ada di FAQ | Bagaimana cara membatalkan pesanan? | Bagaimana cara membatalkan pesanan yang sudah dibuat? | 0.788 | Tepat |
 | 2 | Ada di FAQ | Berapa lama proses refund setelah barang dikembalikan? | Berapa lama proses refund setelah pengembalian disetujui? | 0.814 | Tepat |
 | 3 | Parafrase | duit udah kepotong tapi orderan masih dibilang belum lunas, gimana nih? | Kenapa pembayaran saya berhasil dipotong tapi status pesanan masih belum terbayar? | 0.793 | Tepat |
 | 4 | Parafrase | aku ga inget kata sandi buat masuk, caranya reset gimana ya | Saya lupa password akun, bagaimana cara mengaturnya ulang? | 0.769 | Tepat |
 | 5 | Parafrase | barang yang dateng beda sama yang aku order | Saya menerima barang yang salah, apa yang harus saya lakukan? | 0.801 | Tepat |
-| 6 | Tidak ada di FAQ | Apakah bisa kirim barang ke luar negeri, misalnya ke Jepang? | Apakah bisa memilih jasa pengiriman sendiri saat checkout? | 0.693 | LLM bilang ga ada infonya |
+| 6 | Tidak ada di FAQ | Apakah bisa kirim barang ke luar negeri, misalnya ke Jepang? | Apakah bisa memilih jasa pengiriman sendiri saat checkout? | 0.693 | LLM menyampaikan informasi tidak tersedia |
 
-**Analisis singkat**
-- 5 dari 5 query yang ada jawabannya berhasil dapet FAQ yang benar di rank 1, termasuk 3 query parafrase. Query 3 contohnya hampir ga ada kata yang sama ("duit kepotong" vs "pembayaran dipotong", "belum lunas" vs "belum terbayar"), tapi tetap ketemu. Jadi semantic search-nya memang nangkep makna, bukan cuma keyword.
-- Ada sedikit noise di rank bawah. Contoh query 1 ("membatalkan pesanan"), rank 2 nya malah FAQ pengembalian barang. Tapi LLM cuma pakai FAQ yang relevan, jadi jawabannya tetap benar.
-- Di query 5 LLM ngegabungin 2 FAQ (cara komplain + batas 3 hari), jadi jawabannya lebih lengkap.
-- Query 6 (pengiriman luar negeri) skornya paling rendah (0.693) dan ketiga hasilnya skornya mepet (0.693/0.693/0.689), tanda ga ada FAQ yang benar-benar cocok. LLM ga ngarang dan ngarahin ke CS sesuai instruksi prompt.
-- Semua angka di jawaban LLM (3-7 hari kerja, 15-30 menit, maksimal 3 hari) aku cek ulang ke CSV dan sesuai.
+### Analisis
+
+- Kelima query yang jawabannya ada di FAQ berhasil mendapatkan FAQ yang benar di rank 1, termasuk 3 query parafrase. Pada query 3 hampir tidak ada kata yang sama dengan FAQ aslinya, misalnya "duit kepotong" dengan "pembayaran dipotong" dan "belum lunas" dengan "belum terbayar", tetapi FAQ yang tepat tetap ditemukan. Ini menunjukkan semantic search mencocokkan makna, bukan hanya kata kunci.
+- Masih ada hasil yang kurang relevan di rank bawah. Pada query 1 tentang membatalkan pesanan, rank 2 justru FAQ tentang pengembalian barang. Namun LLM hanya memakai FAQ yang relevan sehingga jawabannya tetap benar.
+- Pada query 5, LLM menggabungkan informasi dari 2 FAQ, yaitu cara mengajukan komplain dan batas waktu 3 hari, sehingga jawabannya lebih lengkap.
+- Query 6 tentang pengiriman ke luar negeri memiliki skor paling rendah (0.693) dan ketiga hasilnya memiliki skor yang hampir sama (0.693, 0.693, 0.689). Ini menandakan tidak ada FAQ yang benar-benar cocok. LLM tidak mengarang jawaban dan mengarahkan pelanggan ke customer service sesuai instruksi di prompt.
+- Angka yang muncul di jawaban LLM, seperti 3-7 hari kerja, 15-30 menit, dan maksimal 3 hari, sudah dicek kembali ke data FAQ dan hasilnya sesuai.
 
 ## Keterbatasan
 
-- **FAISS selalu ngembaliin top-k**, relevan atau nggak. Belum ada threshold similarity, jadi FAQ yang ga nyambung tetap masuk ke prompt. Penanganan "ga tahu" sepenuhnya bergantung ke LLM nurut sama prompt.
-- **Rentang skor similarity sempit** (sekitar 0.65-0.82), selisih antara relevan dan ga relevan cuma ~0.07-0.1. Kalau mau pasang threshold harus hati-hati (dari tes ini kira-kira di 0.72).
-- **Pertanyaan yang nanya 2 hal sekaligus** bisa aja cuma kejawab sebagian karena konteksnya cuma top-3.
-- **Gaya bahasa LLM belum konsisten**, kadang manggil "Kak", kadang "kamu".
-- **Rate limit free tier** (5 request/menit untuk gemini-2.5-flash), jadi testing banyak query agak lama.
-- Jawaban LLM bisa beda sedikit tiap run karena temperature 0.3 (isi tetap ngikutin FAQ).
-- Knowledge base cuma 59 FAQ, jadi pakai `IndexFlatL2` (exact search) masih oke. Kalau datanya udah ribuan baru perlu index yang lebih efisien.
+- FAISS selalu mengembalikan top-k hasil walaupun hasilnya tidak relevan. Saat ini belum ada batas minimum similarity, sehingga FAQ yang tidak berhubungan tetap masuk ke prompt. Penanganan pertanyaan yang tidak ada jawabannya masih bergantung pada LLM yang mengikuti instruksi prompt.
+- Rentang skor similarity cukup sempit, sekitar 0.65 sampai 0.82. Selisih antara hasil yang relevan dan tidak relevan hanya sekitar 0.07 sampai 0.1. Dari pengujian ini, batas minimum yang mungkin cocok berada di sekitar 0.72.
+- Pertanyaan yang menanyakan dua hal sekaligus bisa saja hanya terjawab sebagian karena context yang diambil hanya 3 FAQ.
+- Gaya bahasa LLM belum konsisten. Kadang memanggil pelanggan dengan "Kak" dan kadang dengan "kamu".
+- Batas request Gemini API versi gratis adalah 5 request per menit untuk gemini-2.5-flash, sehingga pengujian dengan banyak query membutuhkan waktu lebih lama.
+- Kalimat jawaban LLM bisa sedikit berbeda setiap kali dijalankan karena temperature 0.3, tetapi isinya tetap mengikuti FAQ.
+- Jumlah FAQ hanya 59 sehingga `IndexFlatL2` masih cukup. Jika datanya sudah ribuan, sebaiknya menggunakan jenis index yang lebih efisien.
 
 ## Struktur Project
 
 ```
 Semantic_Search_Assignment/
 ├── data/
-│   └── ecommerce_faq_knowledge_base.csv     # knowledge base asli (ga diubah)
+│   └── ecommerce_faq_knowledge_base.csv
 ├── notebook/
 │   └── starter_notebook_semantic_search.ipynb
 ├── vector_store/
-│   ├── faq_index.faiss                      # FAISS index hasil dari notebook
-│   └── faq_metadata.csv                     # mapping urutan vektor -> FAQ
+│   ├── faq_index.faiss
+│   └── faq_metadata.csv
 ├── documentation/
 │   └── retrieval_test_results.md
 ├── README.md
@@ -96,13 +103,13 @@ Semantic_Search_Assignment/
 
 ## Cara Menjalankan
 
-1. Clone repo ini lalu masuk ke foldernya.
-2. Install library:
+1. Clone repository ini lalu masuk ke folder project.
+2. Install library yang dibutuhkan:
    ```bash
    pip install -r requirements.txt
    ```
-3. Bikin API key di [Google AI Studio](https://aistudio.google.com/apikey), terus simpan sebagai environment variable `GEMINI_API_KEY` (notebook ngambil key dari situ, ga ditulis di kode).
-   - Windows (Command Prompt), habis itu tutup & buka lagi CMD/Jupyter-nya:
+3. Buat API key di [Google AI Studio](https://aistudio.google.com/apikey), lalu simpan sebagai environment variable `GEMINI_API_KEY`. Notebook akan mengambil API key dari environment variable tersebut.
+   - Windows (Command Prompt), setelah itu tutup dan buka kembali Command Prompt atau Jupyter:
      ```
      setx GEMINI_API_KEY "MASUKKAN_API_KEY_DI_SINI"
      ```
@@ -111,9 +118,9 @@ Semantic_Search_Assignment/
      echo 'export GEMINI_API_KEY="MASUKKAN_API_KEY_DI_SINI"' >> ~/.zshrc
      source ~/.zshrc
      ```
-4. Buka notebook dari folder `notebook/` (path data di notebook pakai `../data/...`):
+4. Buka notebook dari dalam folder `notebook/`, karena path data di notebook menggunakan `../data/...`:
    ```bash
    cd notebook
    jupyter notebook starter_notebook_semantic_search.ipynb
    ```
-5. Run All. Notebook bakal bikin embedding, nyimpen index ke `vector_store/`, lalu jalanin semua tes query. Karena ada jeda buat rate limit, section 8 butuh kira-kira 1-2 menit.
+5. Jalankan semua cell dengan Run All. Notebook akan membuat embedding, menyimpan index ke `vector_store/`, lalu menjalankan semua query pengujian. Karena ada jeda untuk batas request, bagian 8 membutuhkan waktu sekitar 1-2 menit.
